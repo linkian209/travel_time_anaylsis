@@ -105,7 +105,7 @@ for name in timesheet.sheetnames:
                 # and count hours and days
                 cur_row = PO_START_ROW + cur_po_row
 
-                for cur_col in range(DAYS_START_COLUMN, DAYS_END_COLUMN):
+                for cur_col in range(DAYS_START_COLUMN, DAYS_END_COLUMN+1):
                     # Check if this cell is blank, if so, continue
                     hours = sheet.cell(row=cur_row, column=cur_col).value
                     if(hours is None):
