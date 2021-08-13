@@ -73,7 +73,7 @@ for name in timesheet.sheetnames:
     if(name == TOTAL_SHEET_NAME):
         continue
 
-    sheet = timesheet.get_sheet_by_name(name)
+    sheet = timesheet[name]
 
     # If this is January, get the year
     if(name == 'January'):
@@ -86,7 +86,11 @@ for name in timesheet.sheetnames:
     month_data = {
         'month': name,
         'total_hours': 0,
-        'days_worked': []
+        'days_worked': [],
+        'days_in_town': [],
+        'days_out_of_town': [],
+        'hours_in_town': 0,
+        'hours_out_of_town': 0
     }
     cur_po_row = 0
 
@@ -108,16 +112,28 @@ for name in timesheet.sheetnames:
                 for cur_col in range(DAYS_START_COLUMN, DAYS_END_COLUMN+1):
                     # Check if this cell is blank, if so, continue
                     hours = sheet.cell(row=cur_row, column=cur_col).value
-                    if(hours is None):
+                    if(hours is None or hours == ' '):
                         continue
 
-                    # Ok. Now add the hours to the count.
+                    # Ok. Now add the hours to the counts.
                     month_data['total_hours'] += int(hours)
 
-                    # Check if we need to add this day to the list
+                    if(po.find('(5)') is not -1):
+                        month_data['hours_in_town'] += int(hours)
+                    else:
+                        month_data['hours_out_of_town'] += int(hours)
+
+                    # Check if we need to add this day to the lists
                     cur_day = sheet.cell(row=DAY_NUMBER_ROW, column=cur_col).value
                     if(month_data['days_worked'].count(cur_day) is 0):
                         month_data['days_worked'].append(cur_day)
+
+                        # Check to add this to either the in country or foreign list
+                        if(po.find('(5)') is not -1):
+                            month_data['days_in_town'].append(cur_day)
+                        else:
+                            month_data['days_out_of_town'].append(cur_day)
+
                         need_to_sort = True
                     
                 # Done looping print results
@@ -128,6 +144,8 @@ for name in timesheet.sheetnames:
         # Ok. We are done with this row, check if we should sort the days
         if(need_to_sort):
             month_data['days_worked'].sort()
+            month_data['days_in_town'].sort()
+            month_data['days_out_of_town'].sort()
 
         # Iterate
         cur_po_row += 1
@@ -139,6 +157,8 @@ for name in timesheet.sheetnames:
 
     # Calculate total days worked
     month_data['total_days'] = len(month_data['days_worked'])
+    month_data['total_days_in_town'] = len(month_data['days_in_town'])
+    month_data['total_days_out_of_town'] = len(month_data['days_out_of_town'])
 
     # Add this months data to the list
     timesheet_data[name] = month_data
@@ -153,9 +173,10 @@ results = openpyxl.load_workbook(results_file)
 if(results.sheetnames.count(str(cur_year)) is 0):
     make_new_year_page(results, str(cur_year))
 
-results_sheet = results.get_sheet_by_name(str(cur_year))
+results_sheet = results[str(cur_year)]
 
 # Now add the data to the sheet
+# Start with months totals
 month_mapping = {
     'January': 3, 'February': 4, 'March': 5, 'April': 6, 'May': 7, 'June': 8,
     'July': 9, 'August': 10, 'September': 11, 'October': 12, 'November': 13,
@@ -167,6 +188,12 @@ for month in timesheet_data:
     results_sheet.cell(row=row, column=1).value = cur_month['month']
     results_sheet.cell(row=row, column=2).value = cur_month['total_hours']
     results_sheet.cell(row=row, column=3).value = cur_month['total_days']
+
+# Now add breakdowns
+results_sheet['B20'] = sum([timesheet_data[x]['total_days_in_town'] for x in timesheet_data])
+results_sheet['B21'] = sum([timesheet_data[x]['hours_in_town'] for x in timesheet_data])
+results_sheet['F20'] = sum([timesheet_data[x]['total_days_out_of_town'] for x in timesheet_data])
+results_sheet['F21'] = sum([timesheet_data[x]['hours_out_of_town'] for x in timesheet_data])
 
 # Done!
 print('Done!')

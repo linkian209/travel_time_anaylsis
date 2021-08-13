@@ -37,16 +37,23 @@ def make_new_year_page(workbook, year):
     cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
     cell.font = bold
     cell.value = '{} Totals'.format(year)
+    
     sheet.merge_cells('A16:F16')
-
     cell = sheet['A16']
     cell.fill = openpyxl.styles.PatternFill(patternType="solid", fgColor="dadada")
     cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
     cell.font = bold
     cell.value = 'Calculations'
 
+    sheet.merge_cells('A19:F19')
+    cell = sheet['A19']
+    cell.fill = openpyxl.styles.PatternFill(patternType="solid", fgColor="dadada")
+    cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
+    cell.font = bold
+    cell.value = 'Totals Breakdown'
+
     # Next format column widths
-    sheet.column_dimensions['A'].width = 13
+    sheet.column_dimensions['A'].width = 15
     sheet.column_dimensions['C'].width = 13
     sheet.column_dimensions['D'].width = 10
     sheet.column_dimensions['E'].width = 17.5
@@ -72,7 +79,7 @@ def make_new_year_page(workbook, year):
             sheet.cell(row=row, column=5).value = '=E{}+B{}'.format(row-1, row)
             sheet.cell(row=row, column=6).value = '=F{}+C{}'.format(row-1, row)
 
-    # Finally, fill in calculations section
+    # Next, fill in calculations section
     sheet['A17'].font = bold
     sheet['A17'].value = 'Days in Year'
     sheet['B17'].value = 260
@@ -87,6 +94,16 @@ def make_new_year_page(workbook, year):
     sheet['D18'].value = '% in Hours'
     sheet['E18'].value = '=ABS(E14/B18)'
     sheet['E18'].number_format = '0.00%'
+
+    # Finally do break downs
+    sheet['A20'].font = bold
+    sheet['A20'].value = 'Days Domestic'
+    sheet['A21'].font = bold
+    sheet['A21'].value = 'Hours Domestic'
+    sheet['E20'].font = bold
+    sheet['E20'].value = 'Days Foreign'
+    sheet['E21'].font = bold
+    sheet['E21'].value = 'Hours Foreign'
 
     # Sort the sheets
     sheetnames = workbook.sheetnames
